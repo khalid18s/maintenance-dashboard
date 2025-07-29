@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تقرير الصيانة - يونيو</title>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+      color: #222;
+      padding: 20px;
+      direction: rtl;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    h2 {
+      color: #275EFE;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>المؤشرات العامة</h2>
+    <p id="summary">جارٍ التحميل...</p>
+  </div>
+
+  <div class="card">
+    <div id="barChart"></div>
+  </div>
+
+  <div class="card">
+    <div id="pieChart"></div>
+  </div>
+
+  <script>
+    fetch("https://olivearabia-my.sharepoint.com/personal/kalsuwayt_olivearabia_com/_layouts/15/download.aspx?UniqueId=%7B4009a6a5%2Da00d%2D41c1%2Da141%2D83565f761e70%7D")
+      .then(res => res.json())
+      .then(data => {
+        const sections = data.map(d => d["القسم الفني"]);
+        const requests = data.map(d => Number(d["عدد الطلبات"]) || 0);
+        const completed = data.map(d => Number(d["عدد المنجزة"]) || 0);
+        const completionRates = data.map(d => Number(d["نسبة الإنجاز"]) || 0);
+
+        const totalRequests = requests.reduce((a, b) => a + b, 0);
+        const totalCompleted = completed.reduce((a, b) => a + b, 0);
+        const avgCompletion = (totalCompleted / totalRequests * 100).toFixed(1);
+
+        document.getElementById("summary").innerHTML = `
+          🔢 إجمالي الطلبات: <b>\${totalRequests}</b><br>
+          ✅ إجمالي المنجزة: <b>\${totalCompleted}</b><br>
+          📈 نسبة الإنجاز العامة: <b>\${avgCompletion}%</b>
+        `;
+
+        new ApexCharts(document.querySelector("#barChart"), {
+          chart: {
+            type: 'bar',
+            height: 350
+          },
+          series: [{
+            name: 'نسبة الإنجاز',
+            data: completionRates
+          }],
+          xaxis: {
+            categories: sections
+          },
+          title: {
+            text: 'نسبة الإنجاز حسب القسم الفني'
+          },
+          colors: ['#275EFE']
+        }).render();
+
+        new ApexCharts(document.querySelector("#pieChart"), {
+          chart: {
+            type: 'pie',
+            height: 320
+          },
+          labels: sections,
+          series: requests,
+          title: {
+            text: 'توزيع عدد الطلبات حسب القسم'
+          },
+          colors: ['#275EFE', '#39C0ED', '#6E7CFF', '#94D0FF', '#D9E8FF']
+        }).render();
+      })
+      .catch(err => {
+        document.getElementById("summary").innerText = "حدث خطأ في تحميل البيانات.";
+        console.error("JSON fetch error:", err);
+      });
+  </script>
+</body>
+</html>
